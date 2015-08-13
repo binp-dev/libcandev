@@ -47,7 +47,7 @@ int CAN_createNode(CAN_Node *node, const char *name)
 	}
 	
 	node->addr.can_family  = AF_CAN;
-	node->addr.can_ifindex = ifr.ifr_ifindex;
+	node->addr.can_ifindex = node->ifr.ifr_ifindex;
 	
 	printf("%s at index %d\n", node->ifname, node->ifr.ifr_ifindex);
 	
@@ -94,6 +94,37 @@ int CAN_receive(const CAN_Node *node, struct can_frame *frame)
 	{
 		perror("Error read CAN raw socket");
 		return 2;
+	}
+	
+	return 0;
+}
+
+int CAN_listen(const CAN_Node *node, void (*callback)(void *, struct can_frame *), void *cookie, int *done)
+{
+	int status;
+	struct can_frame frame;
+	
+	while(!*done)
+	{
+		struct timeval tv;
+		fd_set set;
+		
+		FD_ZERO(&set);
+		FD_SET(node->fd, &set);
+		tv.tv_sec = 0;
+		tv.tv_usec = 10*1000;
+		
+		int s = select(node->fd + 1, &set, NULL, NULL, &tv);
+		if(s < 0)
+			return 1;
+		if(s == 0)
+			continue;
+		
+		status = CAN_receive(node, &frame);
+		if(status != 0)
+			return 2;
+		
+		callback(cookie, &frame);
 	}
 	
 	return 0;

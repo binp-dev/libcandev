@@ -1,5 +1,6 @@
 libcandev
 ========
 
-Library for managing devices designed by [Victor Kozak](http://www.inp.nsk.su/~kozak/starte.htm) from [Institute of Nuclear Physics](http://www.inp.nsk.su/)
+Library for managing CAN devices
 
+Devices list and documentation may be found [here](http://www.inp.nsk.su/~kozak/designs/designse.htm)
