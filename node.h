@@ -72,7 +72,7 @@ int CAN_send(const CAN_Node *node, const struct can_frame *frame)
 	if(frame->can_dlc < 0 || frame->can_dlc > 8)
 	{
 		fprintf(stderr, "data_lenght not in range 0 .. 8");
-		return 1;
+		return 3;
 	}
 	
 	int nbytes = write(node->fd, frame, sizeof(struct can_frame));
@@ -82,6 +82,11 @@ int CAN_send(const CAN_Node *node, const struct can_frame *frame)
 		perror("Error write CAN raw socket");
 		return 2;
 	}
+	else
+	if(nbytes < sizeof(struct can_frame))
+	{
+		return 1;
+	}
 	
 	return 0;
 }
@@ -89,11 +94,15 @@ int CAN_send(const CAN_Node *node, const struct can_frame *frame)
 int CAN_receive(const CAN_Node *node, struct can_frame *frame)
 {
 	int nbytes = read(node->fd, frame, sizeof(struct can_frame));
-
 	if(nbytes < 0)
 	{
 		perror("Error read CAN raw socket");
 		return 2;
+	}
+	else
+	if(nbytes < sizeof(struct can_frame))
+	{
+		return 1;
 	}
 	
 	return 0;
