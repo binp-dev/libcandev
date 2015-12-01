@@ -219,12 +219,12 @@ void CEAC124_ListenerCallback(void *cookie, struct can_frame *frame)
 	CEAC124 *dev = (CEAC124 *) cookie;
 	
 	int id = (frame->can_id & 0xfc) >> 2;
-	printf("id: 0x%x\n", id);
+	//printf("id: 0x%x\n", id);
 	if(dev->can_device.id != id)
 		return;
 	
 	int cmd = frame->data[0];
-	printf("cmd: 0x%x\n", cmd);
+	//printf("cmd: 0x%x\n", cmd);
 	
 	if(cmd == CEAC124_CMD_ADC_READ_S)
 	{
