@@ -4,3 +4,4 @@ build
 *.config
 *.files
 *.includes
+*.o
