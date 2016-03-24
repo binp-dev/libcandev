@@ -40,6 +40,15 @@ KOZ_DevAttrib;
 
 typedef struct
 {
+	u8 channel_begin;
+	u8 channel_end;
+	u8 time;
+	u8 mode;
+}
+KOZ_ADCReadMProp;
+
+typedef struct
+{
 	u8 channel_number;
 	u8 gain_code;
 	u8 time;
@@ -108,6 +117,7 @@ struct KOZ
 	
 	// callbacks
 	void *cb_cookie; // callback user data
+	void (*cb_adc_read_m)(void *, const KOZ_ADCReadResult *);
 	void (*cb_adc_read_s)(void *, const KOZ_ADCReadResult *);
 	void (*cb_dac_read)  (void *, const KOZ_DACReadResult *);
 	void (*cb_dev_status)(void *, const KOZ_DevStatus *);
@@ -119,6 +129,7 @@ int KOZ_setup(KOZ *device, int id, CAN_Node *node)
 {
 	CAN_setupDevice(&device->can_device, id, node);
 	device->cb_cookie = NULL;
+	device->cb_adc_read_m = NULL;
 	device->cb_adc_read_s = NULL;
 	device->cb_dac_read   = NULL;
 	device->cb_dev_status = NULL;
@@ -132,6 +143,19 @@ int KOZ_adcStop(const KOZ *device)
 	frame.can_id = (6 << 8) | (device->can_device.id << 2);
 	frame.can_dlc = 1;
 	frame.data[0] = KOZ_CMD_ADC_STOP;
+	return CAN_send(device->can_device.node, &frame);
+}
+
+int KOZ_adcReadM(const KOZ *device, KOZ_ADCReadMProp *prop)
+{
+	struct can_frame frame;
+	frame.can_id = (6 << 8) | (device->can_device.id << 2);
+	frame.can_dlc = 5;
+	frame.data[0] = KOZ_CMD_ADC_READ_M;
+	frame.data[1] = prop->channel_begin;
+	frame.data[2] = prop->channel_end;
+	frame.data[3] = prop->time;
+	frame.data[4] = prop->mode;
 	return CAN_send(device->can_device.node, &frame);
 }
 
@@ -223,7 +247,7 @@ void KOZ_ListenerCallback(void *cookie, struct can_frame *frame)
 	int cmd = frame->data[0];
 	//printf("cmd: 0x%x\n", cmd);
 	
-	if(cmd == KOZ_CMD_ADC_READ_S)
+	if(cmd == KOZ_CMD_ADC_READ_M || cmd == KOZ_CMD_ADC_READ_S)
 	{
 		KOZ_ADCReadResult res;
 		res.channel_number = frame->data[1] & 0x3f;
@@ -234,7 +258,14 @@ void KOZ_ListenerCallback(void *cookie, struct can_frame *frame)
 		else
 			res.voltage = res.voltage_code;
 		res.voltage *= 10.0/0x3fffff;
-		if(dev->cb_adc_read_s != NULL) dev->cb_adc_read_s(dev->cb_cookie, &res);
+		if(cmd == KOZ_CMD_ADC_READ_M)
+		{
+			if(dev->cb_adc_read_m != NULL) dev->cb_adc_read_m(dev->cb_cookie, &res);
+		}
+		else 
+		{
+			if(dev->cb_adc_read_s != NULL) dev->cb_adc_read_s(dev->cb_cookie, &res);
+		}
 	}
 	else
 	if((cmd & 0xFC) == KOZ_CMD_DAC_READ)
