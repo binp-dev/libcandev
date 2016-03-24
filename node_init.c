@@ -30,7 +30,9 @@ int CAN_createNode(CAN_Node *node, const char *name)
 	node->addr.can_family  = AF_CAN;
 	node->addr.can_ifindex = node->ifr.ifr_ifindex;
 	
+#ifdef CANDEV_VERBOSE
 	printf("%s at index %d\n", node->ifname, node->ifr.ifr_ifindex);
+#endif // CANDEV_VERBOSE
 	
 	status = bind(node->fd, (struct sockaddr *) &node->addr, sizeof(node->addr));
 	if(status < 0) 

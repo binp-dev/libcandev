@@ -6,7 +6,7 @@
 #include <pthread.h>
 
 #include <candev/node.h>
-#include <candev/ceac124.h>
+#include <candev/kozak.h>
 
 int done = 0;
 
